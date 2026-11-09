@@ -1,0 +1,38 @@
+[Unit]
+Description=mylocalon platform (dashboard + API)
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=mylocalon
+Group=mylocalon
+WorkingDirectory=/opt/mylocalon/platform
+EnvironmentFile=/etc/mylocalon/platform.env
+# Ed25519 private key handed over by systemd, never readable from disk by others.
+LoadCredential=jwt.key:/etc/mylocalon/credentials/jwt.key
+Environment=JWT_PRIVATE_KEY_PATH=%d/jwt.key
+ExecStartPre=/usr/bin/node --experimental-strip-types scripts/migrate.ts
+ExecStart=/usr/bin/node node_modules/next/dist/bin/next start -H 127.0.0.1 -p 3001
+Restart=always
+RestartSec=2
+TimeoutStopSec=15
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+LockPersonality=true
+SystemCallArchitectures=native
+CapabilityBoundingSet=
+ReadWritePaths=/opt/mylocalon/platform/.next/cache
+
+[Install]
+WantedBy=multi-user.target

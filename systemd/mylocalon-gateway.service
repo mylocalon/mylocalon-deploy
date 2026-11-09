@@ -1,0 +1,37 @@
+[Unit]
+Description=mylocalon tunnel gateway
+Documentation=https://github.com/mylocalon/mylocalon-gateway
+After=network-online.target redis-server.service mylocalon-platform.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=mylocalon
+Group=mylocalon
+EnvironmentFile=/etc/mylocalon/gateway.env
+ExecStart=/opt/mylocalon/gateway/bin/gateway
+# SIGTERM → GOAWAY{reconnect:true} to every tunnel, then exit.
+KillSignal=SIGTERM
+TimeoutStopSec=20
+Restart=always
+RestartSec=2
+LimitNOFILE=1048576
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+SystemCallArchitectures=native
+CapabilityBoundingSet=
+
+[Install]
+WantedBy=multi-user.target

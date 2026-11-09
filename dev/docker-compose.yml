@@ -1,0 +1,16 @@
+# Local infra for mylocalon development (TESTING.md §3).
+name: mylocalon
+services:
+  redis:
+    image: redis:7.4-alpine
+    ports: ["127.0.0.1:6379:6379"]
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: mylocalon
+      POSTGRES_PASSWORD: mylocalon
+      POSTGRES_DB: mylocalon
+    ports: ["127.0.0.1:5433:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+volumes:
+  pgdata:

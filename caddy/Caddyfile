@@ -1,0 +1,39 @@
+# mylocalon edge (SECURITY.md §7). Caddy is the ONLY internet-facing process.
+# Needs the Cloudflare DNS module for the wildcard cert; install.sh adds it
+# (caddy add-package github.com/caddy-dns/cloudflare).
+{
+	email {$ACME_EMAIL}
+	# DNS-01 for every certificate: works whether or not Cloudflare proxies the
+	# records, and is the only way to get the wildcard.
+	acme_dns cloudflare {$CLOUDFLARE_API_TOKEN}
+	servers {
+		# Tunnel request bodies are capped by the gateway (10 MiB); keep Caddy above it.
+		max_header_size 32KiB
+	}
+}
+
+(security_headers) {
+	header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+}
+
+# Dashboard + REST API (mylocalon-platform).
+mylocalon.com {
+	import security_headers
+	# Private endpoints are never exposed publicly.
+	@private path /metrics /api/v1/internal/*
+	respond @private 404
+	reverse_proxy 127.0.0.1:3001
+}
+
+# Tunnels: gateway.mylocalon.com (WSS control) and <sub>.mylocalon.com (public traffic).
+*.mylocalon.com {
+	import security_headers
+	@private path /metrics
+	respond @private 404
+	reverse_proxy 127.0.0.1:7002 {
+		# Long-lived tunnel sockets; let the gateway's heartbeat decide liveness.
+		stream_timeout 24h
+		stream_close_delay 5m
+		flush_interval -1
+	}
+}
